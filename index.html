@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forever — ပေါက်စလေး</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap');
+
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding:20px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fff0f5,#fff8ef,#fce8ef);
+  color:#684653;font-family:Padauk,Arial,sans-serif;
+}
+.card{
+  width:100%;max-width:490px;padding:26px 21px;
+  background:#ffffffed;border:1px solid #f4d4df;
+  border-radius:25px;text-align:center;
+  box-shadow:0 12px 40px #b86b8420;
+  position:relative;
+}
+h1,h2{color:#bd6481}
+h1{font-size:26px}
+h2{font-size:22px}
+p{font-size:17px;line-height:1.9;white-space:pre-line}
+.emoji{font-size:48px;margin:8px}
+.buttons{
+  display:flex;justify-content:center;flex-wrap:wrap;
+  gap:12px;margin-top:22px
+}
+button{
+  border:0;border-radius:15px;padding:12px 20px;
+  font:17px Padauk,Arial,sans-serif;
+  background:#d97898;color:white;cursor:pointer;
+  min-width:120px;box-shadow:0 4px 12px #d9789830;
+}
+button.secondary{background:#f5e3eb;color:#98566c}
+button.light{background:white;color:#b85c7b;border:1px solid #efc6d4}
+button:disabled{opacity:.4;cursor:not-allowed}
+textarea{
+  width:100%;min-height:125px;padding:13px;
+  border:1px solid #e9bdcc;border-radius:14px;
+  font:16px Padauk,Arial,sans-serif;
+  background:#fffafd;color:#684653;
+}
+.letter{
+  text-align:left;white-space:pre-line;
+  background:#fffaf5;border:1px solid #f1d8c9;
+  border-radius:15px;padding:18px;
+  line-height:2;font-size:16px;
+  max-height:55vh;overflow:auto;
+}
+.book{font-size:85px;animation:book 2s infinite}
+@keyframes book{50%{transform:rotate(-5deg) scale(1.05)}}
+.heart{
+  position:fixed;pointer-events:none;
+  animation:float 7s linear forwards;opacity:.6;
+}
+@keyframes float{
+  from{transform:translateY(100vh);opacity:0}
+  20%{opacity:.6}
+  to{transform:translateY(-15vh);opacity:0}
+}
+.small{font-size:14px;color:#a77b89}
+</style>
+</head>
+
+<body>
+<div class="card" id="app">
+  <div class="emoji">🧸💗</div>
+  <h1>Forever — ထာဝရအတူရှိချင်ခြင်း</h1>
+  <p>ပေါက်စလေးအတွက် ရေးထားတဲ့ စာမျက်နှာလေးပါ။</p>
+  <button data-action="start">ဖွင့်ကြည့်မယ် 💌</button>
+</div>
+
+<!-- Netlify Forms အတွက် ကြိုတင်သတ်မှတ်ထားသော Form -->
+<form name="pauk-lay-answers"
+      method="POST"
+      data-netlify="true"
+      hidden>
+  <input type="hidden" name="form-name" value="pauk-lay-answers">
+  <input type="text" name="Q1">
+  <input type="text" name="Q1_followup">
+  <input type="text" name="Q1_feeling">
+  <input type="text" name="Q2">
+  <textarea name="reason"></textarea>
+  <input type="text" name="Q3">
+  <input type="text" name="tease">
+  <input type="text" name="final_answer">
+  <textarea name="answers_json"></textarea>
+</form>
+
+<script>
+const app = document.getElementById("app");
+
+const answers = {
+  Q1:"",
+  Q1_followup:"",
+  Q1_feeling:"",
+  Q2:"",
+  reason:"",
+  Q3:"",
+  tease:"",
+  final_answer:""
+};
+
+function render(html){
+  app.innerHTML = html;
+  window.scrollTo(0,0);
+}
+
+function button(label,action,style=""){
+  return `<button type="button" class="${style}" data-action="${action}">${label}</button>`;
+}
+
+function start(){
+  render(`
+    <div class="emoji">🌷</div>
+    <h1>အဆင်သင့်ဖြစ်ပြီလား။</h1>
+    <p>မေးခွန်းတွေကို သေချာလေးစဉ်းစားပြီး ဖြေပေးနော်။</p>
+    <div class="buttons">
+      ${button("အဆင်သင့်ဖြစ်ပြီ 💗","q1")}
+      ${button("မဖြစ်သေးဘူး","wait","secondary")}
+    </div>
+  `);
+}
+
+function waitPage(){
+  render(`
+    <div class="emoji">🐻</div>
+    <h2>ခဏလေး စောင့်ပေးနော်…</h2>
+    <p id="count">၅</p>
+  `);
+  let n=5;
+  const timer=setInterval(()=>{
+    const el=document.getElementById("count");
+    if(!el){clearInterval(timer);return;}
+    n--;
+    el.textContent=n>0?n:"အဆင်သင့်ဖြစ်ပြီ 💗";
+    if(n<=0){
+      clearInterval(timer);
+      q1();
+    }
+  },1000);
+}
+
+function q1(){
+  render(`
+    <div class="emoji">🌸</div>
+    <h2>မေးခွန်း (၁)</h2>
+    <p>အရင်က နီးစပ်ခဲ့တဲ့အချိန်တွေကို လွမ်းမိလား။</p>
+    <div class="buttons">
+      ${button("လွမ်းမိတယ်","q1yes")}
+      ${button("မလွမ်းမိဘူး","q1no","secondary")}
+    </div>
+  `);
+}
+
+function q1yes(){
+  answers.Q1="လွမ်းမိတယ်";
+  render(`
+    <div class="emoji">🥺</div>
+    <h2>တစ်ခုလောက် ထပ်မေးပါရစေ</h2>
+    <p>အဲ့ဆို ဘာလို့ သူစိမ်းဆန်သွားတာလဲ။ ပြန်ရောက်ကတည်းကလေ။</p>
+    <div class="buttons">
+      ${button("အမတွေကို ကြောက်လို့","q1a")}
+      ${button("အဲ့တုန်းက သူ့ဘာသာဖြစ်သွားတာ","q1b","secondary")}
+      ${button("မဖြေချင်ဘူး","q1c","light")}
+    </div>
+  `);
+}
+
+function q1no(){
+  answers.Q1="မလွမ်းမိဘူး";
+  q2();
+}
+
+function q1a(){
+  answers.Q1_followup="အမတွေကို ကြောက်လို့";
+  q2();
+}
+
+function q1b(){
+  answers.Q1_followup="အဲ့တုန်းက သူ့ဘာသာဖြစ်သွားတာ";
+  render(`
+    <div class="emoji">💭</div>
+    <h2>နောက်ထပ်တစ်ခုလေး</h2>
+    <p>အဲ့တုန်းက နီးစပ်ခဲ့တဲ့ ခံစားချက်လေး ပြန်လိုချင်လား။</p>
+    <div class="buttons">
+      ${button("ပြန်လိုချင်တယ်","feelingYes")}
+      ${button("မလိုချင်ဘူး","feelingNo","secondary")}
+    </div>
+  `);
+}
+
+function q1c(){
+  answers.Q1_followup="မဖြေချင်ဘူး";
+  q2();
+}
+
+function feelingYes(){
+  answers.Q1_feeling="ပြန်လိုချင်တယ်";
+  render(`
+    <div class="emoji">🥹💗</div>
+    <h2>ဟုတ်ပါပြီ…</h2>
+    <p>အဖြေပေးလို့ ကျေးဇူးပါနော်။</p>
+    <div class="buttons">${button("ရှေ့ဆက်မယ် →","q2")}</div>
+  `);
+}
+
+function feelingNo(){
+  answers.Q1_feeling="မလိုချင်ဘူး";
+  q2();
+}
+
+function q2(){
+  render(`
+    <div class="emoji">💌</div>
+    <h2>မေးခွန်း (၂)</h2>
+    <p>အခုပြန်ပြီး ရည်းစားစကားပြောရင် လက်ခံမှာလား။</p>
+    <div class="buttons">
+      ${button("လက်ခံမယ် 💗","q2yes")}
+      ${button("လက်မခံဘူး","q2no","secondary")}
+    </div>
+  `);
+}
+
+function q2yes(){
+  answers.Q2="လက်ခံမယ်";
+  q3();
+}
+
+function q2no(){
+  answers.Q2="လက်မခံဘူး";
+  render(`
+    <div class="emoji">🌧️</div>
+    <h2>ဘာကြောင့်လဲ။</h2>
+    <p>ကိုယ့်ကို ပြောပြပေးလို့ရမလား။</p>
+    <textarea id="reasonText" placeholder="ဒီနေရာမှာ စိတ်ထဲရှိတာလေး ရေးပေးပါနော်…"></textarea>
+    <div class="buttons">
+      <button type="button" data-action="saveReason" id="reasonNext" disabled>Next →</button>
+    </div>
+  `);
+}
+
+function saveReason(){
+  const field=document.getElementById("reasonText");
+  if(!field || !field.value.trim())return;
+  answers.reason=field.value.trim();
+  q4();
+}
+
+function q3(){
+  render(`
+    <div class="emoji">❤️</div>
+    <h2>မေးခွန်း (၃)</h2>
+    <p>တကယ်လား။ အဲ့ဆို ချစ်တယ်နော်… အဖြေပေးတော့။</p>
+    <div class="buttons">
+      ${button("ချစ်တယ် 💗","q3yes")}
+      ${button("မချစ်ဘူး","q3no","secondary")}
+    </div>
+  `);
+}
+
+function q3yes(){
+  answers.Q3="ချစ်တယ်";
+  happy();
+}
+
+function q3no(){
+  answers.Q3="မချစ်ဘူး";
+  render(`
+    <div class="emoji">🥺</div>
+    <h2>စောနကကြတော့ လက်ခံမယ်ဆို…</h2>
+    <p>အဲ့လိုတော့ မရဘူးလေ။ သေချာလေး ပြန်ဖြေပေးပါဦး။</p>
+    <div class="buttons">${button("ပြန်ဖြေမယ်","q3")}</div>
+  `);
+}
+
+function happy(){
+  render(`
+    <div class="emoji">🎉💗🧸</div>
+    <h1>Yay!!!</h1>
+    <p>အဲ့ဆို ကိုတို့ တရားဝင်ရည်းစားဖြစ်ပြီနော်။ ပြင်ဦးလွင်ကြ ပုံမှန်ပဲပေါ့။ အမတွေ ဘယ်သူမှ မသိစေရဘူး။ တစ်သက်လုံး ပျော်အောင်ထားမယ်။ တစ်သက်လုံး ချစ်သွားမယ်နော်။
+
+တစ်ခါလောက်တော့ ပြန်နမ်းဦးမယ်။ မနက်ဖြန် စာသင်ခန်းထဲ လာမယ်။ ဖုန်းလည်း မ Block နဲ့တော့နော်။ ဖုန်းဆက်တာ Block ထားတာလေ။
+
+ဒီရောက်ရောက်ချင်းတုန်းကလို ချစ်တယ်နော်။ တကယ်။ ကြောင်လေး၊ ပေါက်စလေး၊ ကလေးလေးရေ… တကယ်ချစ်တယ်။
+
+ကို့ဘဝရဲ့ အပျော်ဆုံးနေ့ ဖြစ်သွားပြီ။ မမေ့ရတော့တဲ့နေ့ပေါ့။</p>
+    <div class="buttons">${button("ပြီးပြီ 💗","sendAnswers")}</div>
+  `);
+}
+
+function q4(){
+  render(`
+    <div class="emoji">🌷</div>
+    <h2>ဟုတ်ပါပြီ…</h2>
+    <p>လက်မခံတာ တောင်းပန်ပါတယ်နော်။ အချိန်တွေ နှောင့်ယှက်မိတာ။</p>
+    <div class="buttons">${button("ဆက်ဖတ်မယ် →","letterPage")}</div>
+  `);
+}
+
+function letterPage(){
+  render(`
+    <div class="emoji">💌</div>
+    <h2>ကိုယ်ပြောချင်ခဲ့တဲ့ စကားလေးတွေ</h2>
+    <div class="letter">နောက်တစ်ခေါက် ထပ်မေးပါရစေ။ အရင်က နောက်ဆုံးအကြိမ်လို့ ပြောခဲ့ပေမဲ့ ကိုယ့်စိတ်ကိုယ် မထိန်းနိုင်သေးလို့ပါ။
+
+ဘာလို့ အခုလို ပြောင်းလဲဆက်ဆံလာတာလဲ။ ဒီနေ့လိုပဲ အရင်က ပြင်ဦးလွင်ရောက်ကတည်းက တဖြည်းဖြည်း ပြောင်းလဲသွားခဲ့တာလေ။ အထူးသဖြင့် ကန်တော်ကြီးသွားပြီးကတည်းကပေါ့။
+
+ကိုယ်လည်း မင်းကို ဆက်မချစ်မိတော့အောင် ကြိုးစားခဲ့ပါတယ်။ ကိုယ့်ကို မရွေးချယ်ဘူးဆိုတာလည်း သိပါတယ်။ အဲ့ဒါကို နားလည်ပေးနိုင်ပေမဲ့ လက်ခံနိုင်ဖို့တော့ ခက်နေတုန်းပါပဲ။
+
+သေချာတဲ့အဖြေလေး ရချင်လို့ နောက်ဆုံးအကြိမ်ဆိုပြီး ထပ်မေးခဲ့တာပါ။ ဒါပေမဲ့ အဖြေက “မသိဘူး” ဆိုတာပဲ ဖြစ်နေခဲ့တယ်။ အဲ့ဒီနောက် စကားလည်း ဆက်မပြောဖြစ်တော့ဘူး။
+
+Move on လုပ်ဖို့ ကြိုးစားနေပါတယ်။ ဒါပေမဲ့ တကယ်တမ်းတော့ မလုပ်နိုင်သေးဘူး။ အခုတော့ ဘာဆက်ပြောရမလဲတောင် မသိတော့ပါဘူး။
+
+မနေ့ကအတွက်တော့ ကျေးဇူးတင်ပါတယ်။ ခဏလေးပဲဖြစ်ဖြစ် အရင်ကလို ပြန်နီးစပ်ခွင့်ရခဲ့လို့ပါ။ ကိုယ်ကတော့ အဲ့ဒီအချိန်လေးတွေကိုတောင် အဓိပ္ပာယ်အများကြီး ဖွင့်မိနေတုန်းပါပဲ။
+
+ဒါပေမဲ့ လူတစ်ယောက်ရဲ့စိတ်ကို အတင်းဆွဲထားလို့ မရဘူးဆိုတာ နားလည်ဖို့ ကြိုးစားပါတော့မယ်။ ကိုယ်တကယ်ချစ်ခဲ့တာကိုတော့ ကိုယ်တိုင်သိပါတယ်။</div>
+    <div class="buttons">${button("Next →","teasePage")}</div>
+  `);
+}
+
+function teasePage(){
+  render(`
+    <div class="emoji">🐻</div>
+    <h2>စတာခံချင်သေးလား။</h2>
+    <div class="buttons">
+      ${button("ခံချင်သေးတယ်","teaseYes")}
+      ${button("မခံချင်တော့ဘူး","teaseNo","secondary")}
+    </div>
+  `);
+}
+
+function teaseYes(){
+  answers.tease="ခံချင်သေးတယ်";
+  finalQuestion();
+}
+
+function teaseNo(){
+  answers.tease="မခံချင်တော့ဘူး";
+  finishBook();
+}
+
+function finalQuestion(){
+  render(`
+    <div class="emoji">💗</div>
+    <h2>ချစ်လားလို့ မေးမယ်နော်…</h2>
+    <p>စိတ်ထဲရှိတဲ့အတိုင်းပဲ ဖြေပေးပါ။</p>
+    <div class="buttons">
+      ${button("YES 💗","finalYes")}
+      <button type="button" id="movingNo" class="secondary">NO 💔</button>
+    </div>
+    <div class="buttons">
+      ${button("မဖြေချင်တော့ဘူး","finalExit","light")}
+    </div>
+  `);
+
+  const no=document.getElementById("movingNo");
+  no.addEventListener("pointerenter",moveNo);
+  no.addEventListener("touchstart",moveNo,{passive:true});
+  no.addEventListener("click",moveNo);
+}
+
+function moveNo(){
+  const no=document.getElementById("movingNo");
+  if(!no)return;
+  no.style.transform=`translate(${Math.random()*140-70}px,${Math.random()*70-35}px)`;
+}
+
+function finalYes(){
+  answers.final_answer="YES";
+  sendAnswers();
+}
+
+function finalExit(){
+  answers.final_answer="မဖြေချင်တော့ဘူး";
+  finishBook();
+}
+
+function finishBook(){
+  render(`
+    <div class="book">📕</div>
+    <h2>ဒီစာအုပ်လေး ဒီမှာပဲ ပိတ်လိုက်ပါပြီ။</h2>
+    <p>ဖတ်ပေးလို့ ကျေးဇူးတင်ပါတယ်နော်။ ကိုယ့်စိတ်ထဲရှိတာတွေကို ပြောပြခွင့်ရခဲ့တာပါပဲ။</p>
+    <div class="buttons">${button("ပြီးဆုံးမယ်","sendAnswers")}</div>
+  `);
+}
+
+async function sendAnswers(){
+  render(`
+    <div class="emoji">💌</div>
+    <h2>အဖြေတွေ ပို့နေပါတယ်…</h2>
+    <p>ခဏလေး စောင့်ပေးပါနော်။</p>
+    <p id="sendStatus">Sending…</p>
+  `);
+
+  const form=document.querySelector('form[name="pauk-lay-answers"]');
+  const names=[
+    "Q1","Q1_followup","Q1_feeling","Q2",
+    "reason","Q3","tease","final_answer"
+  ];
+
+  names.forEach(name=>{
+    form.elements[name].value=answers[name]||"";
+  });
+
+  form.elements["answers_json"].value=JSON.stringify(answers);
+
+  const data=new URLSearchParams(new FormData(form)).toString();
+
+  try{
+    const response=await fetch("/",{
+      method:"POST",
+      headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body:data
+    });
+
+    if(!response.ok)throw new Error("Send failed");
+
+    render(`
+      <div class="emoji">💗🧸</div>
+      <h1>ကျေးဇူးတင်ပါတယ် ပေါက်စလေး။</h1>
+      <p>အဖြေတွေ ပို့ပြီးပါပြီ။ ဒီစာမျက်နှာလေးကို ဖတ်ပေးလို့ ဝမ်းသာပါတယ်။</p>
+      <div class="emoji">🌷</div>
+    `);
+  }catch(error){
+    render(`
+      <div class="emoji">🥺</div>
+      <h2>အဖြေတွေ ပို့လို့မရသေးပါဘူး။</h2>
+      <p>အင်တာနက် ဒါမှမဟုတ် Website setting ကို ပြန်စစ်ဖို့ လိုနိုင်ပါတယ်။</p>
+      <div class="buttons">${button("ထပ်ပို့မယ်","sendAnswers")}</div>
+    `);
+  }
+}
+
+/* ခလုတ်အားလုံးကို တစ်နေရာတည်းက ကိုင်တွယ်မယ် */
+const actions={
+  start,
+  wait:waitPage,
+  q1,
+  q1yes,
+  q1no,
+  q1a,
+  q1b,
+  q1c,
+  feelingYes,
+  feelingNo,
+  q2,
+  q2yes,
+  q2no,
+  saveReason,
+  q3,
+  q3yes,
+  q3no,
+  q4,
+  letterPage,
+  teasePage,
+  teaseYes,
+  teaseNo,
+  finalQuestion,
+  finalYes,
+  finalExit,
+  finishBook,
+  sendAnswers
+};
+
+app.addEventListener("click",event=>{
+  const target=event.target.closest("[data-action]");
+  if(!target)return;
+  const action=target.dataset.action;
+  if(actions[action])actions[action]();
+});
+
+app.addEventListener("input",event=>{
+  if(event.target.id==="reasonText"){
+    const next=document.getElementById("reasonNext");
+    if(next)next.disabled=!event.target.value.trim();
+  }
+});
+
+/* နှလုံးပုံလေးတွေ */
+function addHeart(){
+  const heart=document.createElement("div");
+  heart.className="heart";
+  heart.textContent=["♡","♥","💗","🌸"][Math.floor(Math.random()*4)];
+  heart.style.left=Math.random()*100+"vw";
+  heart.style.fontSize=(15+Math.random()*18)+"px";
+  heart.style.animationDuration=(5+Math.random()*4)+"s";
+  document.body.appendChild(heart);
+  setTimeout(()=>heart.remove(),9500);
+}
+setInterval(addHeart,1500);
+</script>
+</body>
+</html>
